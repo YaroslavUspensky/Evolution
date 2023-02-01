@@ -12,6 +12,7 @@ class Main:
         self.clock = pygame.time.Clock()
 
     def run(self):
+
         grid = Grid()
         # grid[строка][столбец] !!!
         grid.fill_with_food()
@@ -24,8 +25,10 @@ class Main:
             self.clock.tick(self.FPS)
             self.window.fill((255, 255, 255))
 
-            cell.move()
-            cell2.move()
+            for c in grid.cells:
+                if c.alive is False:
+                    grid.grid[c.position[0]][c.position[1]] = 0
+                    del c
 
             for y in range(grid.HEIGHT):
                 for x in range(grid.WIDTH):
@@ -33,13 +36,16 @@ class Main:
                         # у draw сначала столбец потом строка !!!
                         pygame.draw.rect(self.window, grid.FOOD_COLOR, (8*x + 2, 8*y + 2, 4, 4))
                     elif grid.grid[y][x] == 2:
-                        pygame.draw.rect(self.window, cell.CELL_COLOR, (8*x, 8*y, 8, 8))
+                        pygame.draw.rect(self.window, grid.CELL_COLOR, (8*x, 8*y, 8, 8))
             pygame.display.update()
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
+                elif event.type == DEATH:
+
+                    cell.alive = False
 
 
 main = Main()
