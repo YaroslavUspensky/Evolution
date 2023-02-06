@@ -8,44 +8,39 @@ class Main:
         pygame.init()
         self.window = pygame.display.set_mode((800, 400))
         pygame.display.set_caption("Evolution")
-        self.FPS = 10
+        self.FPS = 2
         self.clock = pygame.time.Clock()
 
     def run(self):
 
-        grid = Grid()
+        grid = Field()
         # grid[строка][столбец] !!!
         grid.fill_with_food()
         # у add_cell сначала строка, затем столбец !!!
-        cell = grid.add_cell((25, 65))
-        cell2 = grid.add_cell((25, 35))
-        # cell.find_food()
+        cell = Cell((25, 65), grid.grid)
+        grid.add_cell(cell)
 
         while True:
             self.clock.tick(self.FPS)
             self.window.fill((255, 255, 255))
-
             for c in grid.cells:
                 if c.alive is False:
-                    grid.grid[c.position[0]][c.position[1]] = 0
                     del c
+                else:
+                    c.live()
 
-            for y in range(grid.HEIGHT):
-                for x in range(grid.WIDTH):
+            for y in range(grid.GRID_HEIGHT):
+                for x in range(grid.GRID_WIDTH):
                     if grid.grid[y][x] == 1:
                         # у draw сначала столбец потом строка !!!
-                        pygame.draw.rect(self.window, grid.FOOD_COLOR, (8*x + 2, 8*y + 2, 4, 4))
+                        pygame.draw.rect(self.window, grid.FOOD_COLOR, (8 * x, 8 * y, 8, 8))
                     elif grid.grid[y][x] == 2:
-                        pygame.draw.rect(self.window, grid.CELL_COLOR, (8*x, 8*y, 8, 8))
-            pygame.display.update()
-
+                        self.window.blit(cell.surf, cell.position)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
-                elif event.type == DEATH:
-
-                    cell.alive = False
+            pygame.display.update()
 
 
 main = Main()
