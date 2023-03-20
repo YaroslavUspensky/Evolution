@@ -1,29 +1,47 @@
 import sys
 from layout import *
+from settings import *
+from food import Food
 
 
 class Main:
     def __init__(self):
-        pygame.init()
+
         self.window = pygame.display.set_mode((WIDTH, HEIGHT))
         pygame.display.set_caption("Evolution")
         self.FPS = FPS
         self.clock = pygame.time.Clock()
+        self.time = 0
         self.paused = False
 
     def run(self):
-        for i in range(5):
-            cell = Cell(randint(0, WIDTH//4), randint(0, HEIGHT), 0)
-            all_sprites.add(cell)
-            cell_sprites.add(cell)
+
+        for i in range(INITIAL_CELLS):
+            Cell(randint(0, WIDTH/4), randint(0, HEIGHT), initial_resistance=0, initial_energy=100)
+        for i in range(INITIAL_FOOD):
+            Food()
 
         running = True
         while running:
+            self.time += 1
             self.clock.tick(self.FPS)
             self.window.fill((255, 255, 255))
-            pygame.draw.rect(self.window, (255, 206, 206), (WIDTH/4, 0, WIDTH/4, HEIGHT))
-            pygame.draw.rect(self.window, (238, 176, 176), (WIDTH / 2, 0, WIDTH / 4, HEIGHT))
-            pygame.draw.rect(self.window, (255, 146, 146), (3 * WIDTH / 4, 0, WIDTH / 4, HEIGHT))
+
+            if self.time % FOOD_RESPAWN_DELAY == 0:
+                for i in range(int(INITIAL_FOOD/50)):
+                    food = Food()
+
+            eat = pygame.sprite.groupcollide(cell_sprites, food_sprites, False, True)
+
+            for col in eat:
+                for c in cell_sprites:
+                    if col == c:
+                        c.energy += 60
+
+            pygame.draw.rect(self.window, (200, 186, 206), (WIDTH/4, 0, WIDTH/4, HEIGHT))
+            pygame.draw.rect(self.window, (200, 156, 206), (WIDTH / 2, 0, WIDTH / 4, HEIGHT))
+            pygame.draw.rect(self.window, (200, 130, 206), (3 * WIDTH / 4, 0, WIDTH / 4, HEIGHT))
+
             all_sprites.update()
             all_sprites.draw(self.window)
 
