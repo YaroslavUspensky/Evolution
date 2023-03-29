@@ -1,11 +1,13 @@
 import pygame
 
-from random import randint, uniform
+from random import randint
 from settings import *
+
 
 all_sprites = pygame.sprite.Group()
 cell_sprites = pygame.sprite.Group()
 food_sprites = pygame.sprite.Group()
+table_sprites = pygame.sprite.Group()
 
 
 class Cell(pygame.sprite.Sprite):
@@ -25,6 +27,9 @@ class Cell(pygame.sprite.Sprite):
         self.resistance = initial_resistance
         self.concentration = 0
 
+        self.sensitive = 40
+        self.neighbour = [WIDTH*WIDTH + HEIGHT*HEIGHT, -1, -1]
+
         all_sprites.add(self)
         cell_sprites.add(self)
 
@@ -42,8 +47,9 @@ class Cell(pygame.sprite.Sprite):
     def mutate(self):
         if randint(0, MUTATION_PROBABILITY) == 1:
             self.resistance += 10
-        elif randint(0, MUTATION_PROBABILITY) == 2:
-            self.resistance -= 10
+        # мутация уменьшения устойчивости
+        # elif randint(0, MUTATION_PROBABILITY) == 2:
+        #     self.resistance -= 10
 
     def duplicate(self):
         if self.energy > 60:
@@ -52,40 +58,52 @@ class Cell(pygame.sprite.Sprite):
             all_sprites.add(child)
             cell_sprites.add(child)
 
-    def move_directional(self, target_x, target_y):
+    # ничего не работает
+    # def nearest_neighbours(self) -> None:
+    #
+    #     for f in food_sprites:
+    #         dx = f.rect.centerx - self.rect.centerx
+    #         dy = f.rect.centery - self.rect.centery
+    #         dist = dx**2 + dy**2
+    #         if dist < (self.sensitive**2):
+    #             target_x = f.rect.x
+    #             target_y = f.rect.y
+    #             self.neighbour[0] = dist
+    #             self.neighbour[1] = target_x
+    #             self.neighbour[2] = target_y
+    #         else:
+    #             self.neighbour[0] = -1
 
+    def move_directional(self, target_x, target_y) -> int:  # возвр. число, отвечающее за направление движения
         dx = target_x - self.rect.centerx
         dy = target_y - self.rect.centery
         if abs(dx) > abs(dy):
-            if dx > 0:
-                n = 0
+            if dx < 0:
+                n = 3
             else:
-                n = 1
+                n = 0
         else:
             if dy < 0:
-                n = 3
+                n = 1
             else:
                 n = 4
 
         return n
 
     # мир зациклен только вертикально
-    def move(self):
-        n = randint(0, 7)
-
-        # n = self.move_directional(0, 0)
+    def move(self, n):
 
         if n > 4:
             n = self.last_move
 
-        if n == 0:
+        if n == 0:  # вправо
             self.rect.x += self.speed
-        elif n == 1:
-            self.rect.x -= self.speed
-        elif n == 2:
+        elif n == 1:  # вниз
             self.rect.y += self.speed
-        elif n == 3:
+        elif n == 2:  # вверх
             self.rect.y -= self.speed
+        elif n == 3:  # влево
+            self.rect.x -= self.speed
         self.last_move = n
 
         if self.rect.right > WIDTH:
@@ -99,7 +117,19 @@ class Cell(pygame.sprite.Sprite):
 
         self.energy -= 0.1
 
+    def locator(self):
+        if self.neighbour[0] > (self.sensitive * self.sensitive):
+            self.neighbour[0] = -1
+
     def update(self):
+        self.locator()
+        if self.neighbour[0] > 0:
+            n = self.move_directional(self.neighbour[1], self.neighbour[2])
+        else:
+            n = randint(0, 12)
+
+        self.move(n)
+
         self.lifetime += 1
         self.mutate()
         self.change_zone()
@@ -113,5 +143,3 @@ class Cell(pygame.sprite.Sprite):
 
         if self.lifetime % (4*FPS) == 0:
             self.duplicate()
-
-        self.move()

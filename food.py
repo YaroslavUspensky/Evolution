@@ -1,5 +1,5 @@
 import pygame
-from layout import all_sprites, food_sprites
+from cell import all_sprites, food_sprites
 from settings import WIDTH, HEIGHT
 from random import uniform
 
