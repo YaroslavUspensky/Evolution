@@ -1,5 +1,6 @@
 import pygame
 from cell import Cell, table_sprites, all_sprites
+from settings import WIDTH, HEIGHT
 
 pygame.init()
 pygame.font.init()
@@ -13,21 +14,26 @@ class InfoPanel(pygame.sprite.Sprite):
         self.image = pygame.Surface((80, 80))
         self.image.fill((90, 90, 90))
         self.rect = window.get_rect()
-        self.rect.x = cell.rect.centerx
-        self.rect.y = cell.rect.centery
-        self.text = f"Lifetime:{cell.lifetime}\n" \
-                    f"Resistance:{cell.resistance}\n" \
-                    f"Speed:{cell.speed}\n" \
-                    f"{cell.rect.center}\n" \
-                    f"{cell.neighbour}\n" \
-                    f"{cell.energy}"
+
+        if cell.rect.centerx > WIDTH - 80:
+            self.rect.x = cell.rect.centerx - 80
+
+        else:
+            self.rect.x = cell.rect.centerx
+
+        if cell.rect.centery > HEIGHT - 80:
+            self.rect.y = cell.rect.centery - 80
+        else:
+            self.rect.y = cell.rect.centery
+
+        self.text = f"{cell.lifetime}\n{cell.energy}\n{cell.resistance}\n{cell.rect.center}"
 
         all_sprites.add(self)
         table_sprites.add(self)
 
     def visualize_text(self):
         self.blit_text()
-        self.window.blit(self.image, (self.rect.x-100, self.rect.y-100))
+        self.window.blit(self.image, (self.rect.x, self.rect.y))
 
     def blit_text(self):
         words = [line.split() for line in self.text.splitlines()]  # двумерный массив с текстом, разделенным '\n' и ' '

@@ -1,5 +1,4 @@
 import sys
-import pygame
 from cell import *
 from random import randint
 from settings import *
@@ -27,18 +26,16 @@ class Main:
         for i in range(INITIAL_FOOD):
             Food()
 
-        time_line = []
-        resistance_stats = [["speed", "era period =", ERA_PERIOD]]
+        # time_line = []
+        resistance_stats = [["resistance", "era period =", ERA_PERIOD]]
 
-        statistics_dataframe = pandas.DataFrame(columns=["time, tick", "N cells", "mean resistance", "deviation speed"])
+        statistics_dataframe = pandas.DataFrame(columns=["time, tick", "N cells", "mean resistance", "deviation resistance"])
 
         while self.running:
             self.clock.tick(self.FPS)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False
-                    pygame.quit()
-                    sys.exit()
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_SPACE:
                         self.pause()
@@ -52,12 +49,9 @@ class Main:
                 for i in range(int(INITIAL_FOOD/50)):
                     Food()
 
-            for c in cell_sprites:
-                pygame.draw.circle(self.window, (200, 200, 200, 1), c.rect.center, c.sensitive)
-
             if self.time % ERA_PERIOD == 0:
                 self.era += 1
-                time_line.append(self.era*ERA_PERIOD)
+                # time_line.append(self.era*ERA_PERIOD)
                 collect_statistics(cell_sprites, resistance_stats, statistics_dataframe, self.era)
 
             eat = pygame.sprite.groupcollide(cell_sprites, food_sprites, False, True)
@@ -76,18 +70,17 @@ class Main:
             pygame.display.flip()
 
             if len(cell_sprites) == 0:
-                pygame.quit()
-                sys.exit()
-
-
+                self.running = False
 
         # статистика
         plot_line(1, statistics_dataframe["time, tick"], statistics_dataframe["N cells"], interactive=False)
-        resistance_dataframe = pandas.DataFrame(resistance_stats)
-        resistance_dataframe.to_excel("output_parameters.xlsx")
-        statistics_dataframe.to_excel("output_simulation_stat.xlsx")
+        plot_line(2, statistics_dataframe["time, tick"], statistics_dataframe["mean resistance"], interactive=False)
 
+        # statistics_dataframe.to_excel("output_simulation_stat.xlsx")
+
+        print(f"{self.time // FPS} c")
         pygame.quit()
+        sys.exit()
 
     def pause(self):
         self.running = False
@@ -125,14 +118,9 @@ class Main:
                         min_distance = dist
                         coord_x_target = f.rect.centerx
                         coord_y_target = f.rect.centery
-                        c.neighbour[1] = coord_x_target
-                        c.neighbour[2] = coord_y_target
+                c.neighbour[1] = coord_x_target
+                c.neighbour[2] = coord_y_target
                 c.neighbour[0] = min_distance
-
-            #else:
-                #c.neighbour[0] = WIDTH * WIDTH + HEIGHT * HEIGHT
-
-
 
 
 main = Main()
