@@ -4,35 +4,27 @@ from random import randint
 from settings import *
 
 
-all_sprites = pygame.sprite.Group()
-cell_sprites = pygame.sprite.Group()
-food_sprites = pygame.sprite.Group()
-table_sprites = pygame.sprite.Group()
-
-
 class Cell(pygame.sprite.Sprite):
     last_move = 0
 
-    def __init__(self, initial_x, initial_y, initial_resistance, initial_energy):
+    def __init__(self, initial_x: int, initial_y: int, initial_resistance: int, initial_energy: float) -> None:
         super().__init__()
         self.image = pygame.image.load("Sprites/Cell.png")
         self.rect = self.image.get_rect()
         self.rect.x = initial_x
         self.rect.y = initial_y
-        self.speed = 4
-        self.lifetime = 0
-        self.max_lifetime = 10*FPS
-        self.energy = initial_energy
+
+        self.speed: int = 4
+        self.lifetime: int = 0
+        self.max_lifetime: int = 10*FPS
+        self.energy: float = initial_energy
 
         self.resistance = initial_resistance
 
-        self.sensitive = 40
+        self.sensitive: int = 40
         self.neighbour = [WIDTH*WIDTH + HEIGHT*HEIGHT, -1, -1]
 
-        all_sprites.add(self)
-        cell_sprites.add(self)
-
-    def change_zone(self):
+    def change_zone(self) -> None:
         if WIDTH/4 < self.rect.x < WIDTH/2:
             if self.resistance < 20:
                 self.max_lifetime = 8*FPS
@@ -43,18 +35,17 @@ class Cell(pygame.sprite.Sprite):
             if self.resistance < 100:
                 self.max_lifetime = 2*FPS
 
-    def mutate(self):
-        if randint(0, MUTATION_PROBABILITY) == 1:
+    def mutate(self) -> None:
+        if randint(0, CELL_MUTATION_PROBABILITY) == 1:
             self.resistance += 10
         # мутация уменьшения устойчивости
         # elif randint(0, MUTATION_PROBABILITY) == 2:
         #     self.resistance -= 10
 
     def duplicate(self):
-        child = Cell(self.rect.x + 5, self.rect.y, self.resistance, self.energy/2)
-        self.energy /= 2
-        all_sprites.add(child)
-        cell_sprites.add(child)
+        child = Cell(self.rect.x + 5, self.rect.y, self.resistance, self.energy//2)
+        self.energy //= 2
+        return child
 
     def move_directional(self, target_x, target_y) -> int:  # возвр. число, отвечающее за направление движения
         dx = target_x - self.rect.centerx
@@ -78,7 +69,7 @@ class Cell(pygame.sprite.Sprite):
 
         return n
 
-    def move(self, n):
+    def move(self, n: int) -> None:
 
         if n >= 4:
             n = self.last_move
@@ -104,14 +95,14 @@ class Cell(pygame.sprite.Sprite):
 
         self.energy -= 0.1
 
-    def locator(self):
+    def locator(self) -> None:
         if self.neighbour[0] > (self.sensitive * self.sensitive):
             self.neighbour[0] = -1
 
-    def update(self):
+    def update(self) -> None:
         self.lifetime += 1
 
-        if self.energy < 50:
+        if self.energy < 40:
             self.locator()
             if self.neighbour[0] > 0:
                 n = self.move_directional(self.neighbour[1], self.neighbour[2])
@@ -123,9 +114,6 @@ class Cell(pygame.sprite.Sprite):
 
         self.mutate()
         self.change_zone()
-
-        if self.lifetime % (4*FPS) == 0 and self.energy > 60:
-            self.duplicate()
 
         if self.lifetime >= self.max_lifetime or self.energy <= 0:
             self.kill()

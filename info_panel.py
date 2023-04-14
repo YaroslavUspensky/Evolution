@@ -1,5 +1,5 @@
 import pygame
-from cell import Cell, table_sprites, all_sprites
+from cell import Cell
 from settings import WIDTH, HEIGHT
 
 pygame.init()
@@ -11,7 +11,7 @@ class InfoPanel(pygame.sprite.Sprite):
     def __init__(self, window, cell: Cell):
         super().__init__()
         self.window = window
-        self.image = pygame.Surface((80, 80))
+        self.image = pygame.Surface((80, 60))
         self.image.fill((90, 90, 90))
         self.rect = window.get_rect()
 
@@ -21,15 +21,15 @@ class InfoPanel(pygame.sprite.Sprite):
         else:
             self.rect.x = cell.rect.centerx
 
-        if cell.rect.centery > HEIGHT - 80:
-            self.rect.y = cell.rect.centery - 80
+        if cell.rect.centery > HEIGHT - 60:
+            self.rect.y = cell.rect.centery - 60
         else:
             self.rect.y = cell.rect.centery
 
-        self.text = f"{cell.lifetime}\n{cell.energy}\n{cell.resistance}\n{cell.rect.center}"
-
-        all_sprites.add(self)
-        table_sprites.add(self)
+        self.text = f"Lifetime: {cell.lifetime}\n" \
+                    f"Energy: {round(cell.energy, 2)}\n" \
+                    f"Resistance: {cell.resistance}\n" \
+                    f"Position:\n{cell.rect.center}"
 
     def visualize_text(self):
         self.blit_text()

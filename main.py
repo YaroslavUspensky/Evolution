@@ -1,11 +1,15 @@
-import sys
 from cell import *
-from random import randint
 from settings import *
 from food import Food
 from info_panel import InfoPanel
-from statistics import collect_statistics, plot_line
+from statistics import Statistics
 import pandas
+
+
+all_sprites = pygame.sprite.Group()
+cell_sprites = pygame.sprite.Group()
+food_sprites = pygame.sprite.Group()
+table_sprites = pygame.sprite.Group()
 
 
 class Main:
@@ -19,17 +23,21 @@ class Main:
         self.running = True
         self.era = 0
 
-    def run(self):
+        self.stat = Statistics
+        self.resistance_stats = [["resistance", "era period =", ERA_PERIOD]]
+        self.statistics_dataframe = pandas.DataFrame(columns=["time, tick", "N cells", "mean resistance", "deviation resistance"])
+
+    def run(self, time_limit):
+        # time_limit - на каком кадре заканчивать симуляцию
 
         for i in range(INITIAL_CELLS):
-            Cell(randint(0, WIDTH/4), randint(0, HEIGHT), initial_resistance=0, initial_energy=100)
+            c = Cell(randint(0, WIDTH/4), randint(0, HEIGHT), initial_resistance=0, initial_energy=100)
+            all_sprites.add(c)
+            cell_sprites.add(c)
         for i in range(INITIAL_FOOD):
-            Food()
-
-        # time_line = []
-        resistance_stats = [["resistance", "era period =", ERA_PERIOD]]
-
-        statistics_dataframe = pandas.DataFrame(columns=["time, tick", "N cells", "mean resistance", "deviation resistance"])
+            f = Food()
+            all_sprites.add(f)
+            food_sprites.add(f)
 
         while self.running:
             self.clock.tick(self.FPS)
@@ -45,15 +53,21 @@ class Main:
             self.time += 1
             self.window.fill((255, 255, 255))
 
-            if self.time % FOOD_RESPAWN_DELAY == 0:
-                for i in range(int(INITIAL_FOOD/50)):
-                    Food()
+            if self.time % CELL_DUPLICATION_PERIOD == 0:
+                self.duplication()
 
+            if self.time % FOOD_RESPAWN_DELAY == 0:
+                for i in range(int(INITIAL_FOOD//40)):
+                    f = Food()
+                    all_sprites.add(f)
+                    food_sprites.add(f)
+
+            # статистика
             if self.time % ERA_PERIOD == 0:
                 self.era += 1
-                # time_line.append(self.era*ERA_PERIOD)
-                collect_statistics(cell_sprites, resistance_stats, statistics_dataframe, self.era)
+                self.stat.collect_statistics(cell_sprites, self.resistance_stats, self.statistics_dataframe, self.era)
 
+            # Обработка коллизий с едой
             eat = pygame.sprite.groupcollide(cell_sprites, food_sprites, False, True)
             for col in eat:
                 for c in cell_sprites:
@@ -65,30 +79,26 @@ class Main:
             pygame.draw.rect(self.window, (200, 156, 206), (WIDTH / 2, 0, WIDTH / 4, HEIGHT))
             pygame.draw.rect(self.window, (200, 130, 206), (3 * WIDTH / 4, 0, WIDTH / 4, HEIGHT))
 
+            # обновление, прорисовка
             all_sprites.update()
             all_sprites.draw(self.window)
             pygame.display.flip()
 
+            if time_limit is not None:
+                if self.time >= time_limit:
+                    self.running = False
+
             if len(cell_sprites) == 0:
                 self.running = False
 
-        # статистика
-        plot_line(1, statistics_dataframe["time, tick"], statistics_dataframe["N cells"], interactive=False)
-        plot_line(2, statistics_dataframe["time, tick"], statistics_dataframe["mean resistance"], interactive=False)
-
-        # statistics_dataframe.to_excel("output_simulation_stat.xlsx")
-
-        print(f"{self.time // FPS} c")
-        pygame.quit()
-        sys.exit()
+        self.ending()
 
     def pause(self):
         self.running = False
         while not self.running:
             for e in pygame.event.get():
                 if e.type == pygame.QUIT:
-                    pygame.quit()
-                    sys.exit()
+                    self.ending()
                 if e.type == pygame.KEYDOWN:
                     if e.key == pygame.K_SPACE:
                         self.running = True
@@ -96,7 +106,9 @@ class Main:
                     pos = pygame.mouse.get_pos()
                     for c in cell_sprites:
                         if c.rect.collidepoint(pos):
-                            InfoPanel(self.window, c)
+                            info_p = InfoPanel(self.window, c)
+                            all_sprites.add(info_p)
+                            table_sprites.add(info_p)
                             for t in table_sprites:
                                 t.visualize_text()
 
@@ -104,6 +116,22 @@ class Main:
                 t.kill()
             pygame.display.update()
         self.clock.tick(FPS)
+
+    def ending(self):
+        self.stat.plot_line("Number of cells", self.statistics_dataframe["time, tick"], self.statistics_dataframe["N cells"],
+                            interactive=False)
+        self.stat.plot_line("Resistance", self.statistics_dataframe["time, tick"], self.statistics_dataframe["mean resistance"],
+                            interactive=False)
+        print(f"{self.time // FPS} c")
+        pygame.quit()
+
+    @staticmethod
+    def duplication():
+        for c in cell_sprites:
+            if c.energy > 70:
+                child = c.duplicate()
+                all_sprites.add(child)
+                cell_sprites.add(child)
 
     @staticmethod
     def nearest_neighbours():
@@ -124,4 +152,5 @@ class Main:
 
 
 main = Main()
-main.run()
+# 6000 кадров - 5 минут
+main.run(6000)
