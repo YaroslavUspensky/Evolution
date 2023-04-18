@@ -24,8 +24,8 @@ class Main:
         self.era = 0
 
         self.stat = Statistics
-        self.resistance_stats = [["resistance", "era period =", ERA_PERIOD]]
-        self.statistics_dataframe = pandas.DataFrame(columns=["time, tick", "N cells", "mean resistance", "deviation resistance"])
+        self.resistance_stats = [["resistance"]]
+        self.statistics_dataframe = pandas.DataFrame(columns=["time, tick", "N cells", "mean resistance", "last zone cells"])
 
     def run(self, time_limit):
         # time_limit - на каком кадре заканчивать симуляцию
@@ -53,11 +53,11 @@ class Main:
             self.time += 1
             self.window.fill((255, 255, 255))
 
-            if self.time % CELL_DUPLICATION_PERIOD == 0:
-                self.duplication()
+            # if self.time % CELL_DUPLICATION_PERIOD == 0:
+            self.duplication()
 
             if self.time % FOOD_RESPAWN_DELAY == 0:
-                for i in range(int(INITIAL_FOOD//40)):
+                for i in range(FOOD_RESPAWN):
                     f = Food()
                     all_sprites.add(f)
                     food_sprites.add(f)
@@ -65,7 +65,11 @@ class Main:
             # статистика
             if self.time % ERA_PERIOD == 0:
                 self.era += 1
-                self.stat.collect_statistics(cell_sprites, self.resistance_stats, self.statistics_dataframe, self.era)
+                last_zone_cells = []
+                for c in cell_sprites:
+                    if c.rect.centerx > 3*WIDTH/4:
+                        last_zone_cells.append(c)
+                self.stat.collect_statistics(cell_sprites, last_zone_cells, self.resistance_stats, self.statistics_dataframe, self.era)
 
             # Обработка коллизий с едой
             eat = pygame.sprite.groupcollide(cell_sprites, food_sprites, False, True)
@@ -102,6 +106,7 @@ class Main:
                 if e.type == pygame.KEYDOWN:
                     if e.key == pygame.K_SPACE:
                         self.running = True
+
                 if e.type == pygame.MOUSEBUTTONDOWN:
                     pos = pygame.mouse.get_pos()
                     for c in cell_sprites:
@@ -118,17 +123,21 @@ class Main:
         self.clock.tick(FPS)
 
     def ending(self):
-        self.stat.plot_line("Number of cells", self.statistics_dataframe["time, tick"], self.statistics_dataframe["N cells"],
-                            interactive=False)
-        self.stat.plot_line("Resistance", self.statistics_dataframe["time, tick"], self.statistics_dataframe["mean resistance"],
-                            interactive=False)
+        # чтобы выводились все графики сразу, у каждого должно быть interactive = True
+
+        self.stat.plot_line("Number of cells", self.statistics_dataframe["time, tick"],
+                            self.statistics_dataframe["N cells"], interactive=False)
+        self.stat.plot_line("Resistance", self.statistics_dataframe["time, tick"],
+                            self.statistics_dataframe["mean resistance"], interactive=False)
+        self.stat.plot_line("Last zone cells", self.statistics_dataframe["time, tick"],
+                            self.statistics_dataframe["last zone cells"], interactive=False)
         print(f"{self.time // FPS} c")
         pygame.quit()
 
     @staticmethod
     def duplication():
         for c in cell_sprites:
-            if c.energy > 70:
+            if c.energy > 100:
                 child = c.duplicate()
                 all_sprites.add(child)
                 cell_sprites.add(child)
@@ -153,4 +162,4 @@ class Main:
 
 main = Main()
 # 6000 кадров - 5 минут
-main.run(6000)
+main.run(12000)

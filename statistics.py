@@ -4,31 +4,21 @@ from settings import ERA_PERIOD
 
 
 class Statistics:
-    @staticmethod
-    def parameter_statistics(cells, parameter, matrix, era):
 
+    @staticmethod
+    def collect_statistics(cells, last_zone, matrix, matrix_stat, era):
         matrix.append([])
         for c in cells:
-            matrix[:][era].append(getattr(c, parameter))
+            matrix[:][era].append(getattr(c, "resistance"))
 
-        mean = numpy.mean(matrix[era][:])
+        mean_resistance = numpy.mean(matrix[era][:])
 
-        if len(cells) > 1:
-            deviation = numpy.std(matrix[era][:])
-        else:
-            deviation = 0
-
-        return mean, deviation
-
-    @staticmethod
-    def collect_statistics(cells, matrix, matrix_stat, era):
-        mean_resistance, deviation_resistance = Statistics.parameter_statistics(cells, "resistance", matrix, era)
         num_cells = len(cells)
 
         row = {"time, tick": era*ERA_PERIOD,
                "N cells": num_cells,
                "mean resistance": mean_resistance,
-               "deviation resistance": deviation_resistance,
+               "last zone cells": len(last_zone)
                }
 
         matrix_stat.loc[era] = row
@@ -36,12 +26,6 @@ class Statistics:
     @staticmethod
     def plot_line(title: str, x, y, interactive=True):
         matplotlib.pyplot.figure(title)
-        matplotlib.pyplot.plot(x, y, "o-", alpha=0.4)
+        matplotlib.pyplot.plot(x, y, "-", alpha=0.4)
         matplotlib.interactive(interactive)
         matplotlib.pyplot.show()
-
-    # def boxplot(n_figure, matrix, timeline, interactive):
-    #     matplotlib.pyplot.figure(n_figure)
-    #     matplotlib.pyplot.boxplot(matrix[1:])
-    #     matplotlib.pyplot.interactive(interactive)
-    #     matplotlib.pyplot.show()

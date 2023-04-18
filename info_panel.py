@@ -51,3 +51,54 @@ class InfoPanel(pygame.sprite.Sprite):
                 x += word_width + space
             x = 0
             y += word_height
+
+
+class InputBox(pygame.sprite.Sprite):
+    def __init__(self, x, y, w, h, text, text_input=""):
+        super().__init__()
+        self.rect = pygame.Rect(x, y, w, h)
+        self.color = (150, 150, 150)
+        self.text = text
+        self.text_input = text_input
+        self.text_surface = font.render(self.text, True, (0, 0, 0))
+        self.text_inp_surface = font.render(self.text_input, True, (0, 0, 0))
+        self.active = False
+
+    def handle_event(self, event, parameter):
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if self.rect.collidepoint(event.pos):
+                self.active = not self.active
+            else:
+                self.active = False
+
+            if self.active:
+                self.color = (0, 90, 40)
+            else:
+                self.color = (150, 150, 150)
+
+        if event.type == pygame.KEYDOWN:
+            if self.active:
+                if event.key == pygame.K_RETURN:
+                    parameter = int(self.text_input)
+                    print(self.text_input)
+                    self.text_input = ""
+                elif event.key == pygame.K_BACKSPACE:
+                    self.text_input = self.text_input[:-1]
+                else:
+                    self.text_input += event.unicode
+                self.text_inp_surface = font.render(self.text_input, True, (0, 0, 0))
+
+        return parameter
+
+    def update(self) -> None:
+        self.text_surface = font.render(self.text, True, (0, 0, 0))
+
+    def draw(self, window: pygame.Surface):
+        window.blit(self.text_surface, (self.rect.x - 150, self.rect.y))
+        window.blit(self.text_inp_surface, (self.rect.x, self.rect.y))
+
+        pygame.draw.rect(window, self.rect, self.rect, 2)
+
+
+
+

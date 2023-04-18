@@ -102,7 +102,7 @@ class Cell(pygame.sprite.Sprite):
     def update(self) -> None:
         self.lifetime += 1
 
-        if self.energy < 40:
+        if self.energy < 50:
             self.locator()
             if self.neighbour[0] > 0:
                 n = self.move_directional(self.neighbour[1], self.neighbour[2])
